@@ -1,13 +1,9 @@
 import { AssistantResponse } from "ai";
 import OpenAI from "openai";
 
-// Create an OpenAI API client (that's edge friendly!)
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || "",
 });
-
-// IMPORTANT! Set the runtime to edge
-export const runtime = "edge";
 
 export async function POST(req: Request) {
   // Parse the request body
@@ -29,7 +25,7 @@ export async function POST(req: Request) {
     { threadId, messageId: createdMessage.id },
     async ({ forwardStream, sendDataMessage }) => {
       // Run the assistant on the thread
-      const runStream = openai.beta.threads.runs.createAndStream(threadId, {
+      const runStream = openai.beta.threads.runs.stream(threadId, {
         assistant_id:
           process.env.ASSISTANT_ID ??
           (() => {
@@ -37,7 +33,8 @@ export async function POST(req: Request) {
           })(),
       });
 
-      let runResult = await forwardStream(runStream);
+      // forward run status would stream message deltas
+      await forwardStream(runStream);
     }
   );
 }
